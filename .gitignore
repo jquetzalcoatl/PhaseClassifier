@@ -2,6 +2,9 @@
 __pycache__/
 *.py[codz]
 *$py.class
+wandb/
+test.py
+runJT.sh
 
 # C extensions
 *.so

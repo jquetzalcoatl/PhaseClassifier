@@ -1,0 +1,21 @@
+save_state: 1
+load_state: 0
+
+run_path: ""
+config_path: ""
+
+wandb_enabled: 1
+
+device: gpu
+gpu_list:
+  - 1
+
+defaults:
+  - data: Ising
+  - wandb: ML2
+  - model: model1
+  - engine: engine1
+  - _self_
+
+n_epochs: 250
+epoch_start: 0
