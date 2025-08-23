@@ -1,10 +1,22 @@
 """
-ModelCreator - Interface between run scripts and models.
-
-Provides initialisation of models.
-
-CaloQVAE Group
-2025
+Classes:
+--------
+ModelCreator:
+    Interface for initializing, saving, and loading machine learning models.
+    Methods
+    -------
+    __init__(cfg=None):
+        Initializes the ModelCreator with an optional configuration.
+    init_model():
+        Instantiates the model specified in the configuration.
+    model (property):
+        Returns the initialized model. Raises an assertion error if the model is not defined.
+    model (setter):
+        Sets the internal model instance.
+    save_state(cfg_string='test'):
+        Saves the state dictionaries of all model modules and the configuration to disk.
+    load_state(run_path, device):
+        Loads the state dictionaries for all model modules from a checkpoint file.
 """
 
 import os

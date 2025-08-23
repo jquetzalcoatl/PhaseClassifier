@@ -1,4 +1,22 @@
 """
+Attributes:
+    _config (OmegaConf or None): Configuration object for the engine.
+    _model (torch.nn.Module or None): The model used by the engine.
+    _optimiser (torch.optim.Optimizer or None): Optimizer for training the model.
+    _data_mgr (object or None): Data manager providing data loaders.
+    _device (torch.device or None): Device on which computations are performed.
+    best_val_loss (float): Best validation loss achieved.
+Properties:
+    model (torch.nn.Module): Gets or sets the model.
+    optimiser (torch.optim.Optimizer): Gets or sets the optimizer.
+    data_mgr (object): Gets or sets the data manager.
+    device (torch.device): Gets or sets the device.
+    model_creator (object): Gets or sets the model creator.
+Methods:
+    __init__(cfg=None, **kwargs): Initializes the Engine with optional configuration.
+    _save_model(name="blank"): Saves the model state using the model creator and returns the path.
+    fit_model(epoch): Trains the model for one epoch and logs batch losses.
+    eval_model(data_loader, epoch): Evaluates the model on the given data loader and logs the average loss.
 Base Class of Engines. Defines properties and methods.
 """
 
@@ -12,8 +30,6 @@ logger = logging.getLogger(__name__)
 
 class Engine():
     def __init__(self, cfg=None, **kwargs):
-        super(Engine,self).__init__()
-
         self._config = cfg
         
         self._model = None

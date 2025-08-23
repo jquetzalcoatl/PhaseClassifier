@@ -1,4 +1,29 @@
-#external libraries
+"""
+This script serves as the main entry point for training and evaluating models in the PhaseClassifier project.
+It leverages Hydra for configuration management, PyTorch for deep learning, and integrates with Weights & Biases for experiment tracking.
+Main Components:
+----------------
+- Configuration loading and management via Hydra and OmegaConf.
+- Device selection logic for CPU/GPU training.
+- Model instantiation and setup using custom ModelCreator.
+- Data management via DataManager.
+- Training and evaluation loop managed by Engine.
+- Logging and experiment tracking.
+Functions:
+----------
+- main(cfg=None): Hydra main function. Loads configuration, sets up model and engine, and starts training.
+- set_device(config=None): Determines and sets the computation device (CPU/GPU) based on configuration.
+- setup_model(config=None): Initializes data manager, model, engine, optimizer, and assigns them to the engine.
+- run(engine, _callback=lambda _: False): Runs the training and evaluation loop for the specified number of epochs.
+- callback(engine, epoch): Placeholder for a callback function to be used during training.
+Usage:
+------
+Run this script directly to start the training process with the specified configuration.
+Note:
+-----
+- Custom modules (DataManager, Engine, ModelCreator) are expected to be implemented in the PhaseClassifier package.
+- The script assumes configuration files are located in the '../config' directory.
+"""
 import os
 
 import torch

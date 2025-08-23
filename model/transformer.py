@@ -1,3 +1,48 @@
+"""
+Module: transformer
+-------------------
+This module defines neural network components for the PhaseClassifier project, including MLP, normalization, self-attention, multi-head attention, and a classifier architecture.
+Classes:
+--------
+MLP(cfg):
+    A simple multi-layer perceptron with two linear layers.
+    Args:
+        cfg: Configuration object containing model parameters.
+    Methods:
+        forward(x): Forward pass through the MLP.
+LNorm(dim, fn):
+    Layer normalization wrapper around a given function.
+    Args:
+        dim: Dimension for normalization.
+        fn: Function to apply before normalization.
+    Methods:
+        forward(x): Applies the function and then layer normalization.
+Classifier(cfg=None):
+    Main classifier model using convolutional, linear, and attention layers.
+    Args:
+        cfg: Configuration object containing model parameters.
+    Methods:
+        forward(x): Forward pass through the classifier.
+        loss(pred, target): Computes cross-entropy loss.
+Head(dim, head_size=16):
+    Self-attention block for sequence modeling.
+    Args:
+        dim: Input dimension.
+        head_size: Size of each attention head.
+    Methods:
+        forward(x): Computes self-attention output.
+Multihead(dim, num=1):
+    Multi-head attention block using multiple Headv2 modules.
+    Args:
+        dim: Input dimension.
+        num: Number of attention heads.
+    Methods:
+        forward(x): Computes multi-head attention output.
+Notes:
+------
+- Uses einops for tensor rearrangement.
+- Designed for phase classification tasks with configurable architecture.
+"""
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
