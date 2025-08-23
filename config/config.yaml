@@ -1,16 +1,18 @@
+load_state: 0
+
 run_path: ""
 config_path: ""
 
 device: gpu
 gpu_list:
-  - 1
+  - 2
 
 defaults:
   - data: Ising
   # - wandb: ML2
-  # - model: model1
-  # - engine: engine1
+  - model: model1
+  - engine: engine1
   - _self_
 
-n_epochs: 250
+n_epochs: 25
 epoch_start: 0

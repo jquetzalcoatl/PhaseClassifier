@@ -41,14 +41,14 @@ def main():
                         data[file]['Temperature'].append(tmp[()])
                     if key == 'Snapshot':
                         tmp = f[key1][key]
-                        data[file]['Snapshot'].extend(torch.tensor(tmp[()]).unsqueeze(0).unsqueeze(1))  # add channel dim
+                        data[file]['Snapshot'].extend(torch.tensor(tmp[()]).unsqueeze(0).unsqueeze(1).unsqueeze(2))  # add channel dim
         data[file]['Temperature'] = torch.tensor(data[file]['Temperature'])
         data[file]['Snapshot'] = torch.cat(data[file]['Snapshot'],dim=0)
 
     d = {}
     d['Temperature'] = torch.cat([data[key]['Temperature'].unsqueeze(1) for key in filenames],dim=0).to(dtype=torch.float64)
     d['Snapshot'] = torch.cat([data[key]['Snapshot'] for key in filenames],dim=0).to(dtype=torch.float64)
-    d['Label'] = (d['Temperature'] > 2.269).to(dtype=torch.float64)
+    d['Label'] = (d['Temperature'] > 2.269).to(dtype=torch.int64)
 
     logger.info("Saving processed data.")
     idx = torch.sort(d['Label'][:,0]).indices

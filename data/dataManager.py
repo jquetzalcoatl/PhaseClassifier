@@ -34,7 +34,7 @@ class myDataset(Dataset):
         return len(self.snapshot)
 
     def __getitem__(self, index):
-        return self.snapshot[index, :].float(), self.label[index, :].float()
+        return self.snapshot[index, :].float(), self.label[index, :]
 
 
 class DataManager():

@@ -1,0 +1,6 @@
+model_name: transformer
+
+channels: 8
+n_embd: 16
+head_size: 32
+labels: 2

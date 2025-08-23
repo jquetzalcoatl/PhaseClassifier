@@ -1,0 +1,28 @@
+data:
+  dataset_name: Ising
+  data_path: /raid/javier/Projects/PhaseClassifier/Dataset/data.hdf5
+  frac_train_dataset: 0.8
+  frac_val_dataset: 0.1
+  batch_size_tr: 500
+  batch_size_val: 1000
+  batch_size_test: 1000
+  num_workers: 8
+model:
+  model_name: transformer
+  channels: 8
+  n_embd: 16
+  head_size: 32
+  labels: 2
+engine:
+  _target_: engine.engine.Engine
+  learning_rate: 0.0001
+  n_batches_log_train: 10
+  n_batches_log_eval: 1
+load_state: 0
+run_path: ''
+config_path: ''
+device: gpu
+gpu_list:
+- 2
+n_epochs: 25
+epoch_start: 0
