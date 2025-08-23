@@ -28,13 +28,13 @@ logger = logging.getLogger(__name__)
 
 class myDataset(Dataset):
     def __init__(self, dataset):
-        self.snapshot, self.label = dataset[0], dataset[1]
+        self.snapshot, self.label, self.temperature = dataset[0], dataset[1], dataset[2]
 
     def __len__(self):
         return len(self.snapshot)
 
     def __getitem__(self, index):
-        return self.snapshot[index, :].float(), self.label[index, :]
+        return self.snapshot[index, :].float(), self.label[index, :], self.temperature[index, :]
 
 
 class DataManager():
@@ -72,23 +72,24 @@ class DataManager():
 
         snapshot = self.f["Snapshot"]
         label = self.f["Label"]
+        temperature = self.f["Temperature"]
 
         self.train_loader = DataLoader(
-            myDataset((snapshot[tr_idx, :], label[tr_idx, :])),
+            myDataset((snapshot[tr_idx, :], label[tr_idx, :], temperature[tr_idx, :])),
             batch_size=self._config.data.batch_size_tr,
             shuffle=True,
             num_workers=self._config.data.num_workers
         )
 
         self.val_loader = DataLoader(
-            myDataset((snapshot[va_idx, :], label[va_idx, :])),
+            myDataset((snapshot[va_idx, :], label[va_idx, :], temperature[va_idx, :])),
             batch_size=self._config.data.batch_size_val,
             shuffle=False,
             num_workers=self._config.data.num_workers
         )
 
         self.test_loader = DataLoader(
-            myDataset((snapshot[te_idx, :], label[te_idx, :])),
+            myDataset((snapshot[te_idx, :], label[te_idx, :], temperature[te_idx, :])),
             batch_size=self._config.data.batch_size_test,
             shuffle=False,
             num_workers=self._config.data.num_workers

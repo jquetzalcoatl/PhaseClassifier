@@ -21,6 +21,7 @@ ModelCreator:
 
 import os
 import torch
+import wandb
 
 from omegaconf import OmegaConf
 
@@ -31,6 +32,8 @@ import torch.nn as nn
 
 #import defined models
 from model.transformer import Classifier
+# import uuid
+# from datetime import datetime
 
 _MODEL_DICT={
     "transformer": Classifier,
@@ -57,12 +60,22 @@ class ModelCreator():
     
         
     def save_state(self, cfg_string='test'):
-        if hasattr(self._config, 'run_path'):
-            logger.info(f"Using config run directory: {self._config.run_path}")
-            save_dir = self._config.run_path
+        if wandb.run is not None and self._config.wandb.mode != "disabled" and self._config.load_state == 0:
+            save_dir = wandb.run.dir
+            logger.info(f"Using WandB run directory: {save_dir}")
+        elif wandb.run is not None and self._config.wandb.mode != "disabled" and self._config.load_state == 1:
+            save_dir = self._config.run_path.split('files')[0] + 'files/'
         else:
-            logger.warning("No config run directory found, using current working directory.")
-            save_dir = os.getcwd()
+            # create a short unique string (timestamp + 8 hex chars)
+            # unique = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:8]
+            unique = "tmp"
+            if hasattr(self._config, 'dir'):
+                logger.info(f"Using config run directory: {self._config.dir}")
+                # append unique string to the configured run directory
+                save_dir = os.path.join(self._config.dir, unique)
+            else:
+                logger.warning("No config run directory found, using current working directory.")
+                save_dir = os.path.join(os.getcwd(), unique)
 
         os.makedirs(save_dir, exist_ok=True)
 

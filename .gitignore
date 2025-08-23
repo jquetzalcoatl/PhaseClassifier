@@ -4,6 +4,9 @@ __pycache__/
 *$py.class
 wandb/
 test.py
+output_sym
+outputs/
+run.sh
 runJT.sh
 
 # C extensions

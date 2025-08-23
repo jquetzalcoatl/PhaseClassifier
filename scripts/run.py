@@ -54,6 +54,7 @@ from model.modelCreator import ModelCreator
 
 @hydra.main(config_path="../config", config_name="config", version_base=None)
 def main(cfg=None):
+    mode = cfg.wandb.mode
     if cfg.load_state:
         pass
         # logger.info(f"Loading config from {cfg.config_path}")
@@ -61,6 +62,8 @@ def main(cfg=None):
         # cfg = engine._config
     else:
         engine = setup_model(config=cfg)
+        wandb.init(tags = [cfg.data.dataset_name], project=cfg.wandb.project, entity=cfg.wandb.entity, config=OmegaConf.to_container(cfg, resolve=True), mode=mode)
+        wandb.watch(engine.model)
     print(OmegaConf.to_yaml(cfg, resolve=True))
 
     run(engine)
@@ -131,11 +134,12 @@ def run(engine, _callback=lambda _: False):
 
         engine.eval_model(engine.data_mgr.val_loader, epoch)
 
-        # if (epoch+1) % 10 == 0:
-        #     engine._save_model(name=str(epoch))
+        if (epoch+1) % 10 == 0:
+            engine._save_model(name=str(epoch))
         
         if _callback(engine):
             break
+    engine._save_model(name="Final")
 
 def callback(engine, epoch):
     """
@@ -143,17 +147,16 @@ def callback(engine, epoch):
     """
     pass
 
-# def load_model_instance(cfg, adjust_epoch_start=True):
-#     config = OmegaConf.load(cfg.config_path)
-#     if adjust_epoch_start:
-#         # Adjust the epoch start based on the run_path
-#         config.epoch_start = int(config.run_path.split("_")[-1].split(".")[0]) + 1
-#     config.gpu_list = cfg.gpu_list
-#     config.load_state = cfg.load_state
-#     self = setup_model(config)
-#     self._model_creator.load_state(config.run_path, self.device)
-#     self.model.prior.initOpt()
-#     return self
+def load_model_instance(cfg, adjust_epoch_start=True):
+    config = OmegaConf.load(cfg.config_path)
+    if adjust_epoch_start:
+        # Adjust the epoch start based on the run_path
+        config.epoch_start = int(config.run_path.split("_")[-1].split(".")[0]) + 1
+    config.gpu_list = cfg.gpu_list
+    config.load_state = cfg.load_state
+    self = setup_model(config)
+    self._model_creator.load_state(config.run_path, self.device)
+    return self
 
 if __name__=="__main__":
     logger.info("Starting main executable.")

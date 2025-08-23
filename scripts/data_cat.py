@@ -48,7 +48,7 @@ def main():
     d = {}
     d['Temperature'] = torch.cat([data[key]['Temperature'].unsqueeze(1) for key in filenames],dim=0).to(dtype=torch.float64)
     d['Snapshot'] = torch.cat([data[key]['Snapshot'] for key in filenames],dim=0).to(dtype=torch.float64)
-    d['Label'] = (d['Temperature'] > 2.269).to(dtype=torch.int64)
+    d['Label'] = (d['Temperature'] < 2.269).to(dtype=torch.int64)
 
     logger.info("Saving processed data.")
     idx = torch.sort(d['Label'][:,0]).indices

@@ -23,6 +23,9 @@ Base Class of Engines. Defines properties and methods.
 import torch
 import numpy as np
 
+# Weights and Biases
+import wandb
+
 from omegaconf import OmegaConf
 
 from PhaseClassifier import logging
@@ -88,7 +91,7 @@ class Engine():
     def fit_model(self, epoch):
         log_batch_idx = max(len(self.data_mgr.train_loader)//self._config.engine.n_batches_log_train, 1)
         self._model.train()
-        for i, (x, y) in enumerate(self._data_mgr.train_loader):
+        for i, (x, y, t) in enumerate(self._data_mgr.train_loader):
             self.optimiser.zero_grad()
             output = self._model(x.to(self.device))
             loss = self._model.loss(output, y.to(self.device))
@@ -99,13 +102,14 @@ class Engine():
                 logger.info('Epoch: {} [{}/{} ({:.0f}%)]\t Batch Loss: {:.4f}'.format(epoch,
                     i, len(self.data_mgr.train_loader),100.*i/len(self.data_mgr.train_loader),
                     loss.item()))
+                wandb.log({"loss": loss.item()})
 
     def eval_model(self, data_loader, epoch):
         log_batch_idx = max(len(data_loader)//self._config.engine.n_batches_log_eval, 1)
         self._model.eval()
         self.total_loss = 0
         with torch.no_grad():
-            for i, (x, y) in enumerate(data_loader):
+            for i, (x, y, t) in enumerate(data_loader):
                 output = self._model(x.to(self.device))
                 loss = self._model.loss(output, y.to(self.device))
                 self.total_loss += loss.item()
@@ -114,3 +118,4 @@ class Engine():
             
             logger.info('Epoch: {} \t Batch Loss: {:.4f}'.format(epoch,
                     self.total_loss))
+            wandb.log({"val_loss": self.total_loss})
