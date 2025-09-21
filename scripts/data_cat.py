@@ -25,12 +25,29 @@ import os
 from PhaseClassifier import logging
 logger = logging.getLogger(__name__)
 
-def main():
-    filenames = os.listdir('/raid/javier/Projects/PhaseClassifier/Dataset/raw')
+# PATH_RAW = '/raid/javier/Projects/PhaseClassifier/Dataset/raw'
+# PATH_PROCESSED = '/raid/javier/Projects/PhaseClassifier/Dataset/data.hdf5'
+# PATH_RAW2 = '/raid/javier/Projects/PhaseClassifier/Dataset/raw2'
+# PATH_PROCESSED2 = '/raid/javier/Projects/PhaseClassifier/Dataset/data_2.hdf5'
+
+PATH_RAW = '/raid/javier/Projects/PhaseClassifier/Dataset/raw128/Ising_128_grid'
+PATH_PROCESSED = '/raid/javier/Projects/PhaseClassifier/Dataset/data128.hdf5'
+PATH_RAW2 = '/raid/javier/Projects/PhaseClassifier/Dataset/raw128/Ising_128_grid'
+PATH_PROCESSED2 = '/raid/javier/Projects/PhaseClassifier/Dataset/data128.hdf5'
+
+def main(key):
+    if key == 'Train':
+        path_read = PATH_RAW
+        path_processed = PATH_PROCESSED
+    else:
+        path_read = PATH_RAW2
+        path_processed = PATH_PROCESSED2
+
+    filenames = os.listdir(path_read)
     data = {}
     for file in filenames:
-        hdf5_path = f'/raid/javier/Projects/PhaseClassifier/Dataset/raw/{file}'
-        data[file] = {'Temperature': [], 'Snapshot': []}
+        hdf5_path = f'{path_read}/{file}'
+        data[file] = {'Temperature': [], 'Snapshot': [], 'Susceptibility': [], 'Magnetization': []}
         with h5py.File(hdf5_path, 'r') as f:
             logger.info(f"Processing {file}")
             for key1 in f.keys():
@@ -39,29 +56,39 @@ def main():
                     if key == 'Temperature':
                         tmp = f[key1][key]
                         data[file]['Temperature'].append(tmp[()])
-                    if key == 'Snapshot':
+                    elif key == 'Snapshot':
                         tmp = f[key1][key]
                         data[file]['Snapshot'].extend(torch.tensor(tmp[()]).unsqueeze(0).unsqueeze(1).unsqueeze(2))  # add channel dim
-        data[file]['Temperature'] = torch.tensor(data[file]['Temperature'])
-        data[file]['Snapshot'] = torch.cat(data[file]['Snapshot'],dim=0)
+                    elif key == 'Susceptibility':
+                        tmp = f[key1][key]
+                        data[file]['Susceptibility'].extend(torch.tensor(tmp[()]).unsqueeze(0).unsqueeze(1).unsqueeze(2))  # add channel dim
+                    elif key == 'Magnetization':
+                        tmp = f[key1][key]
+                        data[file]['Magnetization'].extend(torch.tensor(tmp[()]).unsqueeze(0).unsqueeze(1).unsqueeze(2))  # add channel dim
+        for key in data[file].keys():
+            if key == 'Snapshot':
+                data[file][key] = torch.cat(data[file][key],dim=0)
+            else:
+                data[file][key] = torch.tensor(data[file][key])
 
     d = {}
-    d['Temperature'] = torch.cat([data[key]['Temperature'].unsqueeze(1) for key in filenames],dim=0).to(dtype=torch.float64)
-    d['Snapshot'] = torch.cat([data[key]['Snapshot'] for key in filenames],dim=0).to(dtype=torch.float64)
+    for feature in ['Temperature', 'Snapshot', 'Susceptibility', 'Magnetization']:
+        if feature == 'Snapshot':
+            d['Snapshot'] = torch.cat([data[key]['Snapshot'] for key in filenames],dim=0).to(dtype=torch.float64)
+        else:
+            d[feature] = torch.cat([data[key][feature].unsqueeze(1) for key in filenames],dim=0).to(dtype=torch.float64)
+        logger.info(d[feature].shape)
     d['Label'] = (d['Temperature'] < 2.269).to(dtype=torch.int64)
 
     logger.info("Saving processed data.")
     idx = torch.sort(d['Label'][:,0]).indices
-    with h5py.File('/raid/javier/Projects/PhaseClassifier/Dataset/data.hdf5', 'w') as f:
-        # Create a dataset within the file
-        # 'my_dataset' is the name of the dataset within the HDF5 file
-        dset = f.create_dataset('Temperature', data=d['Temperature'][idx,:])
-        dset = f.create_dataset('Snapshot', data=d['Snapshot'][idx,:,:])
-        dset = f.create_dataset('Label', data=d['Label'][idx,:])
+    with h5py.File(path_processed, 'w') as f:
+        for feature in d.keys():
+            dset = f.create_dataset(feature, data=d[feature][idx,:] if feature != 'Snapshot' else d[feature][idx,:,:])
 
 if __name__ == "__main__":
     logger.info("Starting data processing.")
-    main()
+    main('test')
     logger.info("Data processing completed.")
     #To plot samples
     # plt.imshow(data['Snapshot'][0,:,:], cmap='gray')

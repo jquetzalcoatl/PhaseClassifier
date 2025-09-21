@@ -56,10 +56,13 @@ from model.modelCreator import ModelCreator
 def main(cfg=None):
     mode = cfg.wandb.mode
     if cfg.load_state:
-        pass
-        # logger.info(f"Loading config from {cfg.config_path}")
-        # engine = load_model_instance(cfg)
-        # cfg = engine._config
+        logger.info(f"Loading config from {cfg.config_path}")
+        engine = load_model_instance(cfg)
+        cfg = engine._config
+        os.environ["WANDB_DIR"] = cfg.config_path.split("wandb")[0]
+        iden = get_project_id(cfg.run_path)
+        wandb.init(tags = [cfg.data.dataset_name], project=cfg.wandb.project, entity=cfg.wandb.entity, config=OmegaConf.to_container(cfg, resolve=True), mode=mode,
+                resume='allow', id=iden)
     else:
         engine = setup_model(config=cfg)
         wandb.init(tags = [cfg.data.dataset_name], project=cfg.wandb.project, entity=cfg.wandb.entity, config=OmegaConf.to_container(cfg, resolve=True), mode=mode)
@@ -109,12 +112,14 @@ def setup_model(config=None):
         
     # Send the model to the selected device
     model.to(dev)
+    model = model.double()
 
     # For some reason, need to use postional parameter cfg instead of named parameter
     # with updated Hydra - used to work with named param but now is cfg=None 
     engine=instantiate(config.engine, config)
     #add dataMgr instance to engine namespace
     engine.data_mgr=dataMgr
+    engine.data_mgr_test = load_test_loader(config)
     #add device instance to engine namespace
     engine.device=dev    
     #instantiate and register optimisation algorithm
@@ -134,9 +139,16 @@ def run(engine, _callback=lambda _: False):
 
         engine.eval_model(engine.data_mgr.val_loader, epoch)
 
-        if (epoch+1) % 10 == 0:
-            engine._save_model(name=str(epoch))
-        
+        if (epoch+1) % 50 == 0:
+            engine.optimiser = torch.optim.Adam(engine.model.parameters(),
+                                        lr=engine._config.engine.learning_rate)
+        #     engine._save_model(name=str(epoch))
+
+        if engine.total_loss < engine.best_val_loss:
+            # engine.best_val_loss = engine.total_loss
+            # engine._save_model(name="Best")
+            pass
+
         if _callback(engine):
             break
     engine._save_model(name="Final")
@@ -147,16 +159,31 @@ def callback(engine, epoch):
     """
     pass
 
-def load_model_instance(cfg, adjust_epoch_start=True):
+def load_model_instance(cfg, test=False):
     config = OmegaConf.load(cfg.config_path)
-    if adjust_epoch_start:
-        # Adjust the epoch start based on the run_path
-        config.epoch_start = int(config.run_path.split("_")[-1].split(".")[0]) + 1
+    if test:
+        config.data.data_path = cfg.data.data_path_test
     config.gpu_list = cfg.gpu_list
     config.load_state = cfg.load_state
     self = setup_model(config)
     self._model_creator.load_state(config.run_path, self.device)
+    self.model = self.model.double()
     return self
+
+def load_test_loader(cfg):
+    path_tmp = cfg.data.data_path
+    cfg.data.data_path = cfg.data.data_path_test
+    dl = DataManager(cfg)
+    cfg.data.data_path = path_tmp
+    return dl
+
+
+def get_project_id(path):
+    files = os.listdir(path.split('files')[0])
+    b = [ ".wandb" in file for file in files]
+    idx = (np.array(range(len(files))) * np.array(b)).sum()
+    iden = files[idx].split("-")[1].split(".")[0]
+    return iden
 
 if __name__=="__main__":
     logger.info("Starting main executable.")

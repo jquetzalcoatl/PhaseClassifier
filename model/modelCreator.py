@@ -31,12 +31,13 @@ logger = logging.getLogger(__name__)
 import torch.nn as nn
 
 #import defined models
-from model.transformer import Classifier
+from model.transformer import Classifier, Classifierv2
 # import uuid
 # from datetime import datetime
 
 _MODEL_DICT={
     "transformer": Classifier,
+    "transformer_v2": Classifierv2
 }
 
 class ModelCreator():

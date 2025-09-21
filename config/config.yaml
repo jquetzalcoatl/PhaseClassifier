@@ -2,18 +2,18 @@ load_state: 0
 dir: /raid/javier/Projects/PhaseClassifier/Results
 
 run_path: ""
-config_path: /home/javier/Projects/PhaseClassifier/output_sym/wandb/run-20250823_130802-6welshyl/files/transformer_Final_config.yaml
+config_path: /home/javier/Projects/PhaseClassifier/output_sym/wandb/run-20250826_002504-3etbh3xp/files/transformer_Final_config.yaml
 
 device: gpu
 gpu_list:
-  - 2
+  - 3
 
 defaults:
-  - data: Ising
+  - data: Ising_128
   - wandb: dgx
-  - model: model1
+  - model: model2
   - engine: engine1
   - _self_
 
-n_epochs: 25
+n_epochs: 500
 epoch_start: 0

@@ -1,0 +1,14 @@
+dataset_name: Ising
+data_path: /raid/javier/Projects/PhaseClassifier/Dataset/data128.hdf5
+data_path_test: /raid/javier/Projects/PhaseClassifier/Dataset/data128.hdf5
+
+lattice_size: 128
+
+frac_train_dataset: 0.8
+frac_val_dataset: 0.1
+
+batch_size_tr: 1000
+batch_size_val: 1000
+batch_size_test: 1000
+
+num_workers: 8

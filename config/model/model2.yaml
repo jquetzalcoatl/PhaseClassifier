@@ -1,4 +1,4 @@
-model_name: transformer
+model_name: transformer_v2
 
 channels: 16
 n_embd: 16

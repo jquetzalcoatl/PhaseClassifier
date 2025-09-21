@@ -58,6 +58,7 @@ class DataManager():
 
     def create_dataloaders(self):
         total = self.f["Snapshot"].shape[0]
+        logger.info(f'Creating dataloader. Total number of samples: {total}')
         frac_train = self._config.data.frac_train_dataset
         frac_val = self._config.data.frac_val_dataset
 

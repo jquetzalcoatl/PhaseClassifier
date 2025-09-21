@@ -79,13 +79,21 @@ class Classifier(nn.Module):
         self._config = cfg
         self.seq = nn.Sequential(
             nn.Conv2d(1, self._config.model.channels, kernel_size=2, stride=2, padding=0),
+            nn.SiLU()
         )
         self.lm_head1 = nn.Linear(self._config.model.channels, self._config.model.n_embd)
+        # self.ln = nn.LayerNorm(self._config.model.n_embd)
         self.sa_head = Head(self._config.model.n_embd, self._config.model.head_size)
         self.lm_head2 = nn.Linear(self._config.model.head_size, self._config.model.n_embd)
         self.conv = nn.Conv2d(self._config.model.n_embd,
                               self._config.model.labels,
                               self._config.model.n_embd,1,0)
+        # classifier head after pooling
+        # self.classifier = nn.Sequential(
+        #     nn.LayerNorm(self._config.model.n_embd),
+        #     nn.Dropout(0.2),
+        #     nn.Linear(self._config.model.n_embd, self._config.model.labels)
+        # )
 
     def forward(self, x):
         x = self.seq(x)
@@ -94,8 +102,56 @@ class Classifier(nn.Module):
         x = self.lm_head1(x)
         x = self.sa_head(x)
         x = self.lm_head2(x)
+        # opt 1)
         x = rearrange(x, "b (h w) c -> b c h w", h=H, w=W)
         x = self.conv(x).squeeze(3).squeeze(2)
+        # opt 2)
+        # x = x.mean(dim=1)
+        # x = self.classifier(x)
+        return x
+
+    def loss(self, pred, target):
+        return F.cross_entropy(pred, target.view(-1))
+    
+class Classifierv2(nn.Module):
+    def __init__(self, cfg=None):
+        super(Classifierv2, self).__init__()
+        self._config = cfg
+        self.seq = nn.Sequential(
+            nn.Conv2d(1, self._config.model.channels, kernel_size=2, stride=2, padding=0),
+            nn.SiLU(),
+            nn.Conv2d(self._config.model.channels, self._config.model.channels, kernel_size=2, stride=2, padding=0),
+            nn.SiLU(),
+            nn.Conv2d(self._config.model.channels, self._config.model.channels, kernel_size=2, stride=2, padding=0),
+            nn.SiLU(),
+        )
+        self.lm_head1 = nn.Linear(self._config.model.channels, self._config.model.n_embd)
+        self.ln = nn.LayerNorm(self._config.model.n_embd)
+        self.sa_head = Head(self._config.model.n_embd, self._config.model.head_size)
+        self.lm_head2 = nn.Linear(self._config.model.head_size, self._config.model.n_embd)
+        self.conv = nn.Conv2d(self._config.model.n_embd,
+                              self._config.model.labels,
+                              self._config.model.n_embd,1,0)
+        # classifier head after pooling
+        # self.classifier = nn.Sequential(
+        #     nn.LayerNorm(self._config.model.n_embd),
+        #     nn.Dropout(0.2),
+        #     nn.Linear(self._config.model.n_embd, self._config.model.labels)
+        # )
+
+    def forward(self, x):
+        x = self.seq(x)
+        B,C,H,W = x.shape
+        x = rearrange(x, "b c h w -> b (h w) c")
+        x = self.lm_head1(x)
+        x = self.sa_head(self.ln(x))
+        x = self.lm_head2(x)
+        # opt 1)
+        x = rearrange(x, "b (h w) c -> b c h w", h=H, w=W)
+        x = self.conv(x).squeeze(3).squeeze(2)
+        # opt 2)
+        # x = x.mean(dim=1)
+        # x = self.classifier(x)
         return x
 
     def loss(self, pred, target):

@@ -28,6 +28,8 @@ import wandb
 
 from omegaconf import OmegaConf
 
+from utils.tools import observable_from_sim, plot_susc, plot_magnetization, generate_data_to_plot
+
 from PhaseClassifier import logging
 logger = logging.getLogger(__name__)
 
@@ -40,6 +42,7 @@ class Engine():
         self._data_mgr = None
         self._device = None
         self.best_val_loss = float("inf")
+        self.mag_sim, self.susc_sim, self.temp = observable_from_sim(cfg.data.data_path_test)
 
     @property
     def model(self):
@@ -65,7 +68,16 @@ class Engine():
     def data_mgr(self,data_mgr):
         assert data_mgr is not None, "Empty Data Manager"
         self._data_mgr=data_mgr
-        
+
+    @property
+    def data_mgr_test(self):
+        return self._data_mgr_test
+
+    @data_mgr_test.setter
+    def data_mgr_test(self, data_mgr):
+        assert data_mgr is not None, "Empty Data Manager"
+        self._data_mgr_test = data_mgr
+
     @property
     def device(self):
         return self._device
@@ -93,13 +105,13 @@ class Engine():
         self._model.train()
         for i, (x, y, t) in enumerate(self._data_mgr.train_loader):
             self.optimiser.zero_grad()
-            output = self._model(x.to(self.device))
+            output = self._model(x.to(self.device, dtype=torch.float64))
             loss = self._model.loss(output, y.to(self.device))
             loss.backward()
             self.optimiser.step()
 
             if (i % log_batch_idx) == 0:
-                logger.info('Epoch: {} [{}/{} ({:.0f}%)]\t Batch Loss: {:.4f}'.format(epoch,
+                logger.info('Epoch: {} [{}/{} ({:.0f}%)]\t Batch Loss: {:.9f}'.format(epoch,
                     i, len(self.data_mgr.train_loader),100.*i/len(self.data_mgr.train_loader),
                     loss.item()))
                 wandb.log({"loss": loss.item()})
@@ -110,12 +122,20 @@ class Engine():
         self.total_loss = 0
         with torch.no_grad():
             for i, (x, y, t) in enumerate(data_loader):
-                output = self._model(x.to(self.device))
+                output = self._model(x.to(self.device, dtype=torch.float64))
                 loss = self._model.loss(output, y.to(self.device))
                 self.total_loss += loss.item()
 
             self.total_loss /= len(data_loader)
             
-            logger.info('Epoch: {} \t Batch Loss: {:.4f}'.format(epoch,
+            logger.info('Epoch: {} \t Batch Loss: {:.9f}'.format(epoch,
                     self.total_loss))
             wandb.log({"val_loss": self.total_loss})
+
+            self.make_plots()
+
+    def make_plots(self):
+        mag = generate_data_to_plot(self)
+        fig1 = plot_magnetization(mag, self.temp, self.mag_sim)
+        fig2 = plot_susc(mag, self.temp, self.susc_sim, self._config.data.lattice_size**2)
+        wandb.log({"magnetization": wandb.Image(fig1), "susceptibility": wandb.Image(fig2)})
